@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "fastapi-scraper"
+version = "0.1.0"
+description = "Simple web scraper with fastapi"
+authors = ["ayushlm10 <ayushthakur385@gmail.com>"]
+readme = "README.md"
+packages = [{include = "fastapi_scraper"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.111.0"
+requests = "^2.32.3"
+bs4 = "^0.0.2"
+
+[tool.ruff]
+line-length = 120
+select = [
+    # Pyflakes
+    "F",
+    # Pycodestyle
+    "E",
+    "W",
+    # isort
+    "I001",
+]
+
+[tool.poetry.group.dev.dependencies]
+ruff = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
