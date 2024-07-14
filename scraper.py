@@ -1,13 +1,7 @@
 import httpx
 from bs4 import BeautifulSoup
 
-import models
-
-URL = "https://dentalstall.com/shop/page/"
-
-
-def generate_urls(page_limit: int) -> list[str]:
-    return [f"{URL}{page}" for page in range(1, page_limit + 1)]
+import api.models as models
 
 
 async def scrape_page(client: httpx.AsyncClient, url: str) -> models.ScrapedProducts:
