@@ -3,8 +3,8 @@ import asyncio
 import httpx
 from fastapi import APIRouter
 
-import scraper
-from api import models
+import api.models as models
+import api.scraper as scraper
 
 router = APIRouter(
     prefix="/scrape",
@@ -19,7 +19,7 @@ def generate_urls(page_limit: int) -> list[str]:
 
 
 @router.get("/")
-async def scrape(page_limit: int = 5):
+async def scrape_route(page_limit: int = 5):
     urls = generate_urls(page_limit)
 
     async with httpx.AsyncClient() as client:

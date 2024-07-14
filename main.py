@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 
-from api.routing import router
+from api.routers.scrape import router as scraper_router
 
 app = FastAPI()
 
-app.include_router(router)
+app.include_router(scraper_router)
 
 
 @app.get("/")

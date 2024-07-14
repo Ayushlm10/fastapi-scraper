@@ -27,9 +27,9 @@ async def scrape_page(client: httpx.AsyncClient, url: str) -> models.ScrapedProd
 
         extracted_products.append(
             models.Product(
-                name=name,
-                price=price,
-                image_link=image_link,
+                product_title=name,
+                product_price=price,
+                path_to_image=image_link,
             )
         )
     return extracted_products
