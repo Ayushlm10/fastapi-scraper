@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 
+from api.dependencies import get_api_key
 from api.services.json_db_service import JSONDatabaseService
 from interfaces.database_interface import DatabaseInterface
 from scraper.scraper_service import ScraperService as Scraper
@@ -25,7 +26,11 @@ def generate_urls(page_limit: int) -> list[str]:
 
 
 @router.get("/")
-async def scrape_route(page_limit: int = 5, scraper: Scraper = Depends(get_scraper)):
+async def scrape_route(
+    page_limit: int = 5,
+    scraper: Scraper = Depends(get_scraper),
+    api_key: str = Depends(get_api_key),
+):
     urls = generate_urls(page_limit)
     success = await scraper.scrape_and_save(urls)
     if success:
