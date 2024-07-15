@@ -90,3 +90,12 @@ curl -X 'GET' \
 ![image](https://github.com/user-attachments/assets/c7b4407c-9e5a-4917-9484-a22d991d15fc)
 
 As we can see , 0 products were updated in the db.
+
+7) A saved product has this structure (can be seen in products.json). Final data will be a list of these products.:
+```json
+{
+    "product_title": "1 x GDC Extraction Forceps Lo...",
+    "product_price": 850.0,
+    "path_to_image": "https://dentalstall.com/wp-content/uploads/2021/11/GDC-Extraction-Forceps-Lower-Molars-86A-Standard-FX86AS-300x300.jpg"
+},
+```
