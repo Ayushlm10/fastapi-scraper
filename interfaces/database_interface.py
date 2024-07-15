@@ -5,7 +5,7 @@ import api.models as models
 
 class DatabaseInterface(ABC):
     @abstractmethod
-    async def add_products(self, products: list[models.Product]) -> bool:
+    async def add_products(self, products: list[models.Product]) -> int:
         pass
 
     @abstractmethod

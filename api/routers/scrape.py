@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from api.dependencies import get_api_key
+from api.services.console_notification_service import ConsoleNotificationStrategy
 from api.services.json_db_service import JSONDatabaseService
 from interfaces.database_interface import DatabaseInterface
 from scraper.scraper_service import ScraperService as Scraper
@@ -14,8 +15,8 @@ def get_db_client() -> DatabaseInterface:
     return JSONDatabaseService("products.json")
 
 
-def get_scraper(db: DatabaseInterface = Depends(get_db_client)) -> Scraper:
-    return Scraper(db)
+def get_scraper(db: DatabaseInterface = Depends(get_db_client), notifications=ConsoleNotificationStrategy()) -> Scraper:
+    return Scraper(db, notifications)
 
 
 URL = "https://dentalstall.com/shop/page/"
