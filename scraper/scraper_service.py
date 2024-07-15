@@ -3,6 +3,7 @@ import re
 
 import httpx
 from bs4 import BeautifulSoup
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 import api.models as models
 from interfaces.database_interface import DatabaseInterface
@@ -19,6 +20,7 @@ class ScraperService:
             scraped_results = await asyncio.gather(*products)
         return await self.db.add_products(scraped_results)
 
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
     async def scrape_page(self, client: httpx.AsyncClient, url: str) -> list[models.Product]:
         print(f"scraping: {url}")
         products = await client.get(url, follow_redirects=True)
