@@ -14,24 +14,26 @@ class JSONDatabaseService(DatabaseInterface):
         product_dicts = [product.dict() for product in flat_products]
         return product_dicts
 
-    async def add_products(self, products: List[Dict[str, str]]) -> bool:
+    async def add_products(self, products: List[Dict[str, str]]) -> int:
         existing_products = await self.get_all_products()
         existing_dict = {p["product_title"]: p for p in existing_products}
         new_products = self._flatten_to_dict(products)
-        updated = False
+        updated = 0
 
         for product in new_products:
             if product["product_title"] in existing_dict:
                 if existing_dict[product["product_title"]] != product:
                     existing_dict[product["product_title"]] = product
-                    updated = True
+                    updated += 1
             else:
                 existing_dict[product["product_title"]] = product
-                updated = True
+                updated += 1
 
-        if updated:
-            return await self._save_products(list(existing_dict.values()))
-        return True
+        if updated > 0:
+            saved_in_db = await self._save_products(list(existing_dict.values()))
+            if not saved_in_db:
+                return 0
+        return updated
 
     async def get_all_products(self) -> List[Dict[str, str]]:
         if not os.path.exists(self.file_path):
@@ -40,7 +42,6 @@ class JSONDatabaseService(DatabaseInterface):
             return json.load(f)
 
     async def clear_all_products(self) -> bool:
-        await self.cache.clear_cache()
         return await self._save_products([])
 
     async def _save_products(self, products: List[Dict[str, str]]) -> bool:

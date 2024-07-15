@@ -7,18 +7,25 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 import api.models as models
 from interfaces.database_interface import DatabaseInterface
+from interfaces.notifications_interface import NotificationsInterface
 
 
 class ScraperService:
-    def __init__(self, db_service: DatabaseInterface):
+    def __init__(self, db_service: DatabaseInterface, notifications: NotificationsInterface):
         self.db = db_service
+        self.notifications = notifications
 
     async def scrape_and_save(self, urls: list[str]) -> bool:
         scraped_results: list[models.Product] = []
         async with httpx.AsyncClient() as client:
             products: list[models.Product] = [self.scrape_page(client, url) for url in urls]
             scraped_results = await asyncio.gather(*products)
-        return await self.db.add_products(scraped_results)
+
+        scraped_count = sum(len(product_list) for product_list in scraped_results)
+        updated_count = await self.db.add_products(scraped_results)
+        message = f"[Notification service] Scraped {scraped_count} products and updated {updated_count} products in db."
+        self.notifications.send_notifications(message)
+        return True
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
     async def scrape_page(self, client: httpx.AsyncClient, url: str) -> list[models.Product]:
@@ -55,3 +62,9 @@ class ScraperService:
                 )
             )
         return extracted_products
+
+    async def get_all_products(self) -> list[models.Product]:
+        return await self.db.get_all_products()
+
+    async def clear_products(self) -> bool:
+        return await self.db.clear_all_products()
