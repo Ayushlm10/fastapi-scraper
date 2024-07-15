@@ -57,3 +57,36 @@ Everything follows this model (Taking example of database here):
 - In the main router , `api/router/scraper.py` we inject all the dependencies and pass to the scraper service which is responsible for the main scraping logic and its interaction with the database and cache.
 - This way we can create any class (postgres, mysql, dynamodb, etc) which implements the database interface and then from the main router we can inject that particular dependency to be passed to the scraper service and achieve an easy way to use any other database/notification strategy/cache easily.
 - We are not sending requests one by one. We are using **httpx** library to send requests to all urls concurrently leaving **asyncio's** event loop to handle and collect the results whenever they are available.
+
+**Testing**
+
+Assuming the setup is done.
+
+1) Start the redis-server , (optionally redis-cli to see the cache updates)
+2) Start the fast api web server: `fastapi dev main.py`
+3) Send a curl request:
+```bash
+curl -X 'GET' \
+  'http://127.0.0.1:8000/scrape/?page_limit=2' \
+  -H 'accept: application/json' \
+  -H 'access_token: abcde'
+```
+-> This will scrape the first two pages. Note access_token is _abcde_. 
+Output (notification service also prints to the console): 
+
+![image](https://github.com/user-attachments/assets/2b82978e-91f5-4d42-bdf2-78a5ae418a84)
+
+4) Malformed credentials (returns 403):
+
+![image](https://github.com/user-attachments/assets/80d29dd2-ba4d-4a32-b704-36a3833ab9ba)
+
+6) If we again send a request to fetch the first page, it will see it is present in the cache and not hit the db.
+```bash
+curl -X 'GET' \
+  'http://127.0.0.1:8000/scrape/?page_limit=1' \
+  -H 'accept: application/json' \
+  -H 'access_token: abcde'
+```
+![image](https://github.com/user-attachments/assets/c7b4407c-9e5a-4917-9484-a22d991d15fc)
+
+As we can see , 0 products were updated in the db.
