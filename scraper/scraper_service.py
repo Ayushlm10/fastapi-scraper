@@ -62,3 +62,9 @@ class ScraperService:
                 )
             )
         return extracted_products
+
+    async def get_all_products(self) -> list[models.Product]:
+        return await self.db.get_all_products()
+
+    async def clear_products(self) -> bool:
+        return await self.db.clear_all_products()

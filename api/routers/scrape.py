@@ -38,3 +38,18 @@ async def scrape_route(
         return {"message": "Products scraped and saved successfully"}
     else:
         return {"message": "Failed to scrape or save products"}
+
+
+@router.post("/clear")
+async def clear_all_products(scraper: Scraper = Depends(get_scraper), api_key: str = Depends(get_api_key)):
+    success = await scraper.clear_products()
+    if success:
+        return {"message": "All products cleared successfully"}
+    else:
+        return {"message": "Failed to clear products"}
+
+
+@router.get("/get_all_products")
+async def get_all_products(scraper: Scraper = Depends(get_scraper), api_key: str = Depends(get_api_key)):
+    success = await scraper.get_all_products()
+    return success
