@@ -1,6 +1,6 @@
 At a high level , this is the architecture:
 
-![alt text](image-1.png)
+![alt text](arch.png)
 
 Features:
 
