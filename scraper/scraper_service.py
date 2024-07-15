@@ -18,18 +18,21 @@ class ScraperService:
         self.db = db_service
         self.notifications = notifications
         self.cache = cache
+        self.scraped_count = 0
         self.event_loop = asyncio.get_event_loop()
         asyncio.set_event_loop(self.event_loop)
 
-    async def scrape_and_save(self, urls: list[str]) -> bool:
+    async def scrape_and_save(self, urls: list[str], proxy: str = None) -> bool:
         scraped_results: list[models.Product] = []
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(proxies=proxy) as client:
             products: list[models.Product] = [self.scrape_page(client, url) for url in urls]
             scraped_results = await asyncio.gather(*products)
 
-        scraped_count = sum(len(product_list) for product_list in scraped_results)
+        # scraped_count = sum(len(product_list) for product_list in scraped_results)
         updated_count = await self.db.add_products(scraped_results)
-        message = f"[Notification service] Scraped {scraped_count} products and updated {updated_count} products in db."
+        message = (
+            f"[Notification service] Scraped {self.scraped_count} products and updated {updated_count} products in db."
+        )
         self.notifications.send_notifications(message)
         return True
 
@@ -65,6 +68,7 @@ class ScraperService:
                 product_price=price,
                 path_to_image=image_link,
             )
+            self.scraped_count += 1
             if self.cache:
                 cached_product = await self.cache.get(product_model.product_title)
                 if cached_product:
@@ -79,6 +83,8 @@ class ScraperService:
         return await self.db.get_all_products()
 
     async def clear_products(self) -> bool:
-        if self.cache:
-            await self.cache.clear_cache()
-        return await self.db.clear_all_products()
+        success = await self.db.clear_all_products()
+        if success:
+            if self.cache:
+                await self.cache.clear_cache()
+        return success

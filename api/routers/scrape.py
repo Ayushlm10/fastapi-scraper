@@ -1,5 +1,5 @@
 import aioredis
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from api.dependencies import get_api_key
 from api.services.console_notification_service import ConsoleNotificationStrategy
@@ -61,10 +61,11 @@ def generate_urls(page_limit: int) -> list[str]:
 async def scrape_route(
     page_limit: int = 5,
     scraper: Scraper = Depends(get_scraper),
+    proxy: str = Query(None),
     api_key: str = Depends(get_api_key),
 ):
     urls = generate_urls(page_limit)
-    success = await scraper.scrape_and_save(urls)
+    success = await scraper.scrape_and_save(urls, proxy)
     if success:
         return {"message": "Products scraped and saved successfully"}
     else:
