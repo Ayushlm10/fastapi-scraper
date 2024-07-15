@@ -6,14 +6,20 @@ from bs4 import BeautifulSoup
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 import api.models as models
+from interfaces.cache_interface import CacheInterface
 from interfaces.database_interface import DatabaseInterface
 from interfaces.notifications_interface import NotificationsInterface
 
 
 class ScraperService:
-    def __init__(self, db_service: DatabaseInterface, notifications: NotificationsInterface):
+    def __init__(
+        self, db_service: DatabaseInterface, notifications: NotificationsInterface, cache: CacheInterface = None
+    ):
         self.db = db_service
         self.notifications = notifications
+        self.cache = cache
+        self.event_loop = asyncio.get_event_loop()
+        asyncio.set_event_loop(self.event_loop)
 
     async def scrape_and_save(self, urls: list[str]) -> bool:
         scraped_results: list[models.Product] = []
@@ -54,17 +60,25 @@ class ScraperService:
             img_element = product.select_one(".product-inner .mf-product-thumbnail a img")
             image_link = img_element["data-lazy-src"] if img_element and "src" in img_element.attrs else None
 
-            extracted_products.append(
-                models.Product(
-                    product_title=name,
-                    product_price=price,
-                    path_to_image=image_link,
-                )
+            product_model = models.Product(
+                product_title=name,
+                product_price=price,
+                path_to_image=image_link,
             )
+            if self.cache:
+                cached_product = await self.cache.get(product_model.product_title)
+                if cached_product:
+                    cached_product = models.Product.model_validate_json(cached_product)
+                    if cached_product.product_price == product_model.product_price:
+                        continue
+                await self.cache.set(product_model.product_title, product_model.model_dump_json())
+            extracted_products.append(product_model)
         return extracted_products
 
     async def get_all_products(self) -> list[models.Product]:
         return await self.db.get_all_products()
 
     async def clear_products(self) -> bool:
+        if self.cache:
+            await self.cache.clear_cache()
         return await self.db.clear_all_products()

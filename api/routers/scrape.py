@@ -1,10 +1,16 @@
+import aioredis
 from fastapi import APIRouter, Depends
 
 from api.dependencies import get_api_key
 from api.services.console_notification_service import ConsoleNotificationStrategy
 from api.services.json_db_service import JSONDatabaseService
+from api.services.redis_cache_service import RedisCacheService
+from interfaces.cache_interface import CacheInterface
 from interfaces.database_interface import DatabaseInterface
+from interfaces.notifications_interface import NotificationsInterface
 from scraper.scraper_service import ScraperService as Scraper
+
+URL = "https://dentalstall.com/shop/page/"  # should we pass it from cmd line?
 
 router = APIRouter(
     prefix="/scrape",
@@ -12,14 +18,39 @@ router = APIRouter(
 
 
 def get_db_client() -> DatabaseInterface:
+    """
+    This will serve as the db client. We can swap out the database implementation easily without changing the code.
+    """
     return JSONDatabaseService("products.json")
 
 
-def get_scraper(db: DatabaseInterface = Depends(get_db_client), notifications=ConsoleNotificationStrategy()) -> Scraper:
-    return Scraper(db, notifications)
+def get_notification_strategy() -> NotificationsInterface:
+    """
+    This will serve as the notification strategy.
+    We can swap out the notification service implementation easily without changing the code.
+    """
+    return ConsoleNotificationStrategy()
 
 
-URL = "https://dentalstall.com/shop/page/"
+async def get_cache_service() -> CacheInterface:
+    """
+    This will serve as the cache service. We can swap out the cache implementation easily without changing the code.
+    """
+    redis_url = "redis://localhost:6379"
+    try:
+        client = aioredis.from_url(redis_url)
+        await client.ping()
+        return RedisCacheService(redis_url=redis_url)
+    except aioredis.ConnectionError:
+        return None
+
+
+async def get_scraper(
+    db: DatabaseInterface = Depends(get_db_client),
+    notifications=Depends(get_notification_strategy),
+    cache_service=Depends(get_cache_service),
+) -> Scraper:
+    return Scraper(db, notifications, cache=cache_service)
 
 
 def generate_urls(page_limit: int) -> list[str]:
